@@ -1,0 +1,7 @@
+{
+  "_instrucciones": "Copie este archivo como tienda.json. Los tres valores salen de Partner Center → su app → Administración de productos → Identidad del producto.",
+  "identityName": "COMPLETAR (Package/Identity/Name, ej. 12345DjSuarez.LaserEstudioPro)",
+  "publisher": "COMPLETAR (Package/Identity/Publisher, ej. CN=ABCD1234-...)",
+  "publisherDisplayName": "COMPLETAR (Package/Properties/PublisherDisplayName)",
+  "displayName": "Láser Estudio Pro"
+}
