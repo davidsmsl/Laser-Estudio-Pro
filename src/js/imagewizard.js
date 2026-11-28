@@ -79,7 +79,7 @@
             <button class="tb" id="w-reset" title="Deshacer cambios de la imagen">⟲</button>
             <button class="tb" id="w-cw" title="Girar 90° a la derecha">↻</button><button class="tb" id="w-ccw" title="Girar 90° a la izquierda">↺</button>
             <button class="tb" id="w-fv" title="Reflejar verticalmente">⇅</button><button class="tb" id="w-fh" title="Reflejar horizontalmente">⇄</button>
-            <button class="tb" id="w-crop" title="Recortar bordes blancos">✂</button>
+            <button class="tb" id="w-crop" title="Recortar bordes blancos">✂</button><button class="tb" id="w-qf" title="Quitar fondo y detectar siluetas">🪄</button>
           </div>
         </div></div>`,
       onOpen: b => {
@@ -124,6 +124,8 @@
           img = await loadImg(ws.src); pintar();
         };
         ['reset', 'cw', 'ccw', 'fh', 'fv', 'crop'].forEach(op => $(b, '#w-' + op).onclick = () => U.guard(() => aplicarOp(op)));
+        // quitar fondo: cierra el asistente y abre la herramienta sobre la imagen
+        $(b, '#w-qf').onclick = () => { const bc = [...b.closest('.modal, .dlg, [role=dialog]') ? b.closest('.modal, .dlg, [role=dialog]').querySelectorAll('button') : []].find(x => x.textContent.trim() === LS.t('Cancelar') || x.textContent.trim() === 'Cancelar'); if (bc) bc.click(); setTimeout(() => LS.fondo.open(obj), 120); };
         setTimeout(pintar, 30);
       },
       buttons: [{ label: 'Cancelar' }, { label: 'Siguiente ›', primary: true, action: async (b, close) => { b._leer && b._leer(); terminado = 'paso2'; close(true); }, keepOpen: true }],

@@ -13,6 +13,7 @@
     elipse: '<ellipse cx="12" cy="12" rx="8" ry="6"/>', poligono: '<path d="M12 3l8 6-3 10H7L4 9z"/>', texto: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
     zona: '<path d="M3 3h4M3 3v4M21 3h-4M21 3v4M3 21h4M3 21v-4M21 21h-4M21 21v-4"/><rect x="8" y="8" width="8" height="8" stroke-dasharray="2 2"/>',
     origenUsuario: '<circle cx="12" cy="12" r="3"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>',
+    quitarFondo: '<path d="M4 20 14 10"/><path d="M15 4v3M18.5 5.5l-2 2M20 9h-3"/><path d="M15 9l1.5 1.5"/><rect x="3" y="3" width="7" height="7" stroke-dasharray="2 2"/>',
     union: '<circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/>', diferencia: '<path d="M14 7.5A5 5 0 1 0 14 16.5"/><circle cx="15" cy="12" r="5" stroke-dasharray="2 2"/>', interseccion: '<path d="M12 8a5 5 0 0 1 0 8a5 5 0 0 1 0-8z" fill="currentColor"/><circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/>',
     offset: '<rect x="8" y="8" width="8" height="8"/><rect x="4" y="4" width="16" height="16" rx="3" stroke-dasharray="2 2"/>', calcar: '<path d="M4 18c3-8 6-12 8-12s4 6 8 12"/><rect x="3" y="3" width="18" height="18" stroke-dasharray="2 2"/>',
     agrupar: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/><path d="M2 2h20v20H2z" stroke-dasharray="2 2"/>', desagrupar: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/>',
@@ -48,7 +49,7 @@
   }
   // ---------- Caja de herramientas ----------
   const TOOLS = [['seleccionar', 'Seleccionar (V)'], ['linea', 'Línea / polilínea (L) — doble clic para terminar'], ['rect', 'Rectángulo (R) — Mayús: cuadrado'], ['elipse', 'Elipse (E) — Mayús: círculo'], ['poligono', 'Polígono (P)'], ['texto', 'Texto (T)'], ['origenUsuario', 'Fijar referencia: haga clic en el punto del lienzo donde está físicamente el láser'], ['zona', 'Zona parcial (Z): dibuje un recuadro y solo se grabará o cortará lo que quede dentro, sin modificar el diseño (para repasar o reforzar una parte)'], null,
-    ['union', 'Unión booleana', 'union'], ['diferencia', 'Diferencia booleana', 'diferencia'], ['interseccion', 'Intersección booleana', 'interseccion'], ['offset', 'Desplazar formas (offset)', 'offset'], ['calcar', 'Calcar imagen', 'calcar']];
+    ['union', 'Unión booleana', 'union'], ['diferencia', 'Diferencia booleana', 'diferencia'], ['interseccion', 'Intersección booleana', 'interseccion'], ['offset', 'Desplazar formas (offset)', 'offset'], ['calcar', 'Calcar imagen', 'calcar'], ['quitarFondo', 'Quitar fondo y detectar siluetas (F): seleccione una imagen y elimine su fondo uniforme o haga clic con la varita sobre el fondo', 'quitarFondo']];
   function buildToolbox() {
     const tbx = $('#toolbox');
     TOOLS.forEach(t => {

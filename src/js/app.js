@@ -216,6 +216,7 @@
       case 'agrupar': { const s = D.selected(); if (s.length < 2) throw new Error('Seleccione dos o más objetos.'); D.checkpoint(); const g = G.uid(); s.forEach(o => o.group = g); D.changed(); break; }
       case 'desagrupar': D.checkpoint(); D.selected().forEach(o => delete o.group); D.changed(); break;
       case 'union': case 'diferencia': case 'interseccion': LS.ops.boolean(c); break;
+      case 'quitarFondo': return LS.fondo.open();
       case 'offset': if (!D.selection.size) throw new Error('Seleccione formas cerradas.'); return LS.dlg.offset();
       case 'convertirTrazado': LS.ops.toPath(); break;
       case 'calcar': case 'ajustarImagen': { const im = D.selected().find(o => o.kind === 'image'); if (!im) throw new Error('Seleccione una imagen.'); return c === 'calcar' ? LS.dlg.trace(im) : LS.dlg.image(im); }
@@ -267,6 +268,7 @@
     if (k === 'Enter' && V.tool === 'linea') { V.cancelDraft(); return; }
     if (k === 'Delete' || k === 'Backspace') { A.command('eliminar'); return; }
     const tools = { v: 'seleccionar', l: 'linea', r: 'rect', e: 'elipse', p: 'poligono', t: 'texto', z: 'zona' };
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'f' && D.selected().some(o => o.kind === 'image')) { e.preventDefault(); return A.command('quitarFondo'); }
     if (tools[k.toLowerCase()]) { U.setTool(tools[k.toLowerCase()]); return; }
     const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
     if (arrows[k] && D.selection.size) { e.preventDefault(); const s = e.shiftKey ? 10 : 1; D.checkpoint(); D.transformSel(G.tr(arrows[k][0] * s, arrows[k][1] * s)); D.changed('xf'); }

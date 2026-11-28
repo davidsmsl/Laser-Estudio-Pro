@@ -108,9 +108,19 @@
         }
       }
     }
-    if (!segs.length) throw new Error('El trabajo no generó ningún movimiento (¿formas abiertas en una capa de relleno?).');
+    if (!segs.length) throw new Error('El trabajo no generó ningún movimiento: ' + motivoVacio(objs) + '.');
     const job = { segs, bbox, layers: layerIds };
     if (opts.anchorBox) job.anchorBox = opts.anchorBox; // trabajo por partes: todas las partes usan el anclaje del trabajo completo
+    // marco / planificación: el área grabada se recorta como rectángulo (con zona parcial, el marco es la parte de la zona que tiene contenido)
+    if (opts.soloBBox && opts.zona && !opts.sinZona) {
+      const z = opts.zona, b = job.bbox, r = { x0: Math.max(b.x0, Math.min(z.x0, z.x1)), y0: Math.max(b.y0, Math.min(z.y0, z.y1)), x1: Math.min(b.x1, Math.max(z.x0, z.x1)), y1: Math.min(b.y1, Math.max(z.y0, z.y1)) };
+      if (!(r.x1 > r.x0 && r.y1 > r.y0)) throw new Error('La zona parcial no contiene nada para grabar o cortar. Dibújela sobre el diseño o quítela en Láser → Zona parcial.');
+      job.anchorBox = job.anchorBox || b;
+      const pts = [[r.x0, r.y0], [r.x1, r.y0], [r.x1, r.y1], [r.x0, r.y1], [r.x0, r.y0]], L0 = segs.find(s => s.on).L;
+      job.segs = [{ a: [0, 0], b: pts[0], on: false, p: 0, F: 100, L: L0 }].concat(pts.slice(1).map((p, i) => ({ a: pts[i], b: p, on: true, p: 1, F: 100, L: L0 })));
+      job.bbox = Object.assign(r, { w: r.x1 - r.x0, h: r.y1 - r.y0 });
+      opts = Object.assign({}, opts, { sinZona: true });
+    }
     if (LS.device.recortarArea !== false && !opts.sinRecorte) J.clipToBed(job, opts);
     if (opts.zona && !opts.sinZona) J.clipToZona(job, opts.zona);
     if (opts.franja) J.clipToZona(job, { x0: -1e7, y0: opts.franja.y0, x1: 1e7, y1: opts.franja.y1 - 1e-6 });
@@ -126,6 +136,17 @@
     }
     return job;
   };
+  // explica por qué un trabajo quedó vacío
+  function motivoVacio(objs) {
+    const nom = { linea: 'Línea', relleno: 'Relleno', imagen: 'Imagen' };
+    const imgMal = objs.find(o => o.kind === 'image' && D.layer(o.layer).modo !== 'imagen');
+    if (imgMal) return `la imagen está en la capa ${D.layer(imgMal.layer).nombre || imgMal.layer} en modo ${nom[D.layer(imgMal.layer).modo] || D.layer(imgMal.layer).modo}; cambie esa capa a modo Imagen`;
+    const imgs = objs.filter(o => o.kind === 'image');
+    if (imgs.length && imgs.length === objs.length) return 'la imagen quedó completamente en blanco con sus ajustes (Limpiar fondo, Blancos, Brillo o Umbral). Ábrala en el asistente de imagen y baje esos valores';
+    const abiertas = objs.some(o => o.kind !== 'image' && D.layer(o.layer).modo !== 'linea' && D.worldPaths(o).every(p => !p.closed));
+    if (abiertas) return 'hay formas abiertas en una capa de relleno (el relleno necesita formas cerradas); páselas a una capa en modo Línea';
+    return 'revise que los objetos tengan contenido y que sus capas tengan la salida activada';
+  }
   function rank(L) { return L.modo === 'imagen' ? 0 : L.modo === 'relleno' ? 1 : 2; }
 
   function emitRows(rows, L, li, push, cur, tag, angle) {

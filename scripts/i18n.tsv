@@ -931,3 +931,23 @@ La placa soltó el WiFi mientras recibe el archivo; se reconecta al terminar la 
 Limpiar fondo (%)	Clean background (%)	Limpar fundo (%)
 Saltar blancos de más de (mm)	Skip blanks wider than (mm)	Pular brancos maiores que (mm)
 Las zonas en blanco más anchas que esto se cruzan en movimiento rápido con el láser apagado, en vez de recorrerlas a velocidad de grabado. 0 = recorrer todo.	Blank areas wider than this are crossed with a fast move with the laser off, instead of at engraving speed. 0 = scan everything.	Áreas em branco mais largas que isto são cruzadas em movimento rápido com o laser desligado, em vez da velocidade de gravação. 0 = percorrer tudo.
+Quitar fondo y detectar siluetas	Remove background and detect silhouettes	Remover fundo e detectar silhuetas
+Quitar fondo y detectar siluetas (F): seleccione una imagen y elimine su fondo uniforme o haga clic con la varita sobre el fondo	Remove background and detect silhouettes (F): select an image and remove its uniform background or click the background with the wand	Remover fundo e detectar silhuetas (F): selecione uma imagem e remova o fundo uniforme ou clique no fundo com a varinha
+Quitar el fondo uniforme automáticamente (desde los bordes)	Remove the uniform background automatically (from the edges)	Remover o fundo uniforme automaticamente (a partir das bordas)
+Tolerancia de color	Color tolerance	Tolerância de cor
+Quitar también los huecos interiores del mismo color (entre brazos, dentro de letras)	Also remove inner gaps of the same color (between arms, inside letters)	Remover também os vãos internos da mesma cor (entre braços, dentro de letras)
+Limpiar borde (px)	Clean edge (px)	Limpar borda (px)
+Ignorar manchas menores de (%)	Ignore specks smaller than (%)	Ignorar manchas menores que (%)
+Clic en la imagen:	Click on the image:	Clique na imagem:
+🪄 quitar ese color (varita)	🪄 remove that color (wand)	🪄 remover essa cor (varinha)
+✂ descartar / conservar una silueta	✂ discard / keep a silhouette	✂ descartar / manter uma silhueta
+↶ Quitar último clic	↶ Undo last click	↶ Desfazer último clique
+⟲ Reiniciar	⟲ Reset	⟲ Reiniciar
+Al aplicar	When applying	Ao aplicar
+Recortar la imagen a las siluetas (no cambia su posición)	Crop the image to the silhouettes (keeps its position)	Recortar a imagem às silhuetas (mantém a posição)
+Separar cada silueta como imagen independiente	Separate each silhouette as an independent image	Separar cada silhueta como imagem independente
+Crear contorno de corte alrededor de cada silueta (capa de línea)	Create a cut outline around each silhouette (line layer)	Criar contorno de corte ao redor de cada silhueta (camada de linha)
+Aplicar	Apply	Aplicar
+Procesando la imagen…	Processing the image…	Processando a imagem…
+Seleccione una imagen en el lienzo (clic sobre ella) y vuelva a pulsar «Quitar fondo».	Select an image on the canvas (click it) and press «Remove background» again.	Selecione uma imagem na tela (clique nela) e pressione «Remover fundo» novamente.
+No queda ninguna silueta para conservar.	No silhouette left to keep.	Não resta nenhuma silhueta para manter.
