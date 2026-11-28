@@ -7,7 +7,18 @@
   M.logMsg = log;
 
   // ---------------- GRBL ----------------
-  const grbl = { port: null, reader: null, writer: null, buf: '', queue: [], sentLens: [], inflight: [], enPausaRed: false, cerrando: false, trasReconexion: 0, rxSize: 120, pollTimer: null, lineWaiters: [], settings: {} };
+  // Cola de envío para trabajos de cientos de miles de líneas: se lee con un índice (sin copiar ni desplazar el arreglo)
+  class Cola {
+    constructor() { this.a = []; this.h = 0; }
+    get length() { return this.a.length - this.h; }
+    peek() { return this.a[this.h]; }
+    shift() { const v = this.a[this.h++]; if (this.h > 50000 && this.h * 2 > this.a.length) { this.a = this.a.slice(this.h); this.h = 0; } return v; }
+    push(v) { this.a.push(v); }
+    pushMany(arr) { if (!this.length) { this.a = arr.slice(); this.h = 0; } else for (let i = 0; i < arr.length; i++) this.a.push(arr[i]); }
+    unshiftMany(arr) { this.a = arr.concat(this.a.slice(this.h)); this.h = 0; }
+    clear() { this.a = []; this.h = 0; }
+  }
+  const grbl = { port: null, reader: null, writer: null, buf: '', queue: new Cola(), sentLens: [], inflight: [], enPausaRed: false, cerrando: false, trasReconexion: 0, rxSize: 120, pollTimer: null, lineWaiters: [], settings: {} };
   const enc = new TextEncoder(), dec = new TextDecoder();
   async function grblWrite(s) { if (grbl.writer) await grbl.writer.write(enc.encode(s)); }
   // Puerto "virtual" por WiFi (Telnet/TCP) con la misma forma que un puerto serie
@@ -55,7 +66,7 @@
     }
     // líneas enviadas sin confirmar: se reenvían (el G-code es absoluto, repetir un movimiento no cambia el resultado)
     const pend = grbl.inflight.splice(0);
-    if (pend.length) { grbl.queue.unshift(...pend); if (M.running) M.sentCount = Math.max(0, M.sentCount - pend.length); }
+    if (pend.length) { grbl.queue.unshiftMany(pend); if (M.running) M.sentCount = Math.max(0, M.sentCount - pend.length); }
     grbl.sentLens = []; grbl.trasReconexion = Date.now();
     M.state = estadoPrev === 'Reconectando…' ? 'Inactivo' : estadoPrev;
     log('Conexión WiFi recuperada' + (eraTrabajo ? '; el trabajo continúa.' : '.'), 'ok');
@@ -209,7 +220,7 @@
     if (ver) { M.version = +ver[1] + +ver[2] / 10; M.jogLegacy = M.version < 1.1; if (M.jogLegacy) log(`Firmware GRBL ${ver[1]}.${ver[2]}: no admite $J; los movimientos manuales usarán G0.`, 'err'); }
     if (line.startsWith('Grbl')) grbl.ultimoBanner = Date.now();
     if (line.startsWith('Grbl') && M.running && grbl.trasReconexion && Date.now() - grbl.trasReconexion < 4000) {
-      grbl.queue = []; grbl.inflight = []; grbl.sentLens = []; M.running = false; grbl.trasReconexion = 0;
+      grbl.queue.clear(); grbl.inflight = []; grbl.sentLens = []; M.running = false; grbl.trasReconexion = 0;
       log('La placa se reinició durante el corte de WiFi: el trabajo se canceló (la posición pudo perderse). Revise el origen antes de repetir.', 'err');
       LS.ui.toast('La placa se reinició: trabajo cancelado. Revise el origen.', 'err');
     }
@@ -318,7 +329,7 @@
     if (grbl.enPausaRed) return;
     const lim = limiteEnvio(); let lote = '';
     while (grbl.queue.length) {
-      const line = grbl.queue[0], used = grbl.sentLens.reduce((a, b) => a + b, 0);
+      const line = grbl.queue.peek(), used = grbl.sentLens.reduce((a, b) => a + b, 0);
       if (grbl.sentLens.length >= lim.lineas || (grbl.sentLens.length && used + line.length + 1 > lim.bytes)) break;
       grbl.queue.shift(); grbl.sentLens.push(line.length + 1); grbl.inflight.push(line);
       lote += line + '\n';
@@ -410,7 +421,7 @@
     if (grbl.reader) { try { await grbl.reader.cancel(); grbl.reader.releaseLock(); } catch { } grbl.reader = null; }
     if (grbl.writer) { try { grbl.writer.releaseLock(); } catch { } grbl.writer = null; }
     if (grbl.port) { try { await grbl.port.close(); } catch { } grbl.port = null; }
-    grbl.queue = []; grbl.sentLens = []; grbl.inflight = []; M.via = null; grbl.cerrando = false;
+    grbl.queue.clear(); grbl.sentLens = []; grbl.inflight = []; M.via = null; grbl.cerrando = false;
     M.connected = false; M.running = false; M.state = 'Desconectado'; M.pos = null; emit();
   };
   const need = () => { if (!M.connected) throw new Error('Conecte primero el láser (panel Láser → Conectar).'); };
@@ -440,7 +451,7 @@
     // si el controlador rechaza las primeras líneas, el trabajo no avanzará: se cancela y se explica
     if (M.okTrabajo === 0 && M.errTrabajo >= 3) {
       const code = line.split(':')[1];
-      grbl.queue = []; M.running = false; emit();
+      grbl.queue.clear(); M.running = false; emit();
       const motivo = code === '9' ? 'el controlador está en ALARMA (bloqueado). Pulse «Desbloquear» y vuelva a intentarlo; si la placa tiene $22=1 sin finales de carrera, escriba $22=0 en la Consola.'
         : code === '15' ? 'los movimientos superan los límites por software ($20). Revise el área de trabajo o desactive $20.'
         : `el controlador respondió ${line} ${GRBL_ERRORS[code] || ''}.`;
@@ -457,7 +468,7 @@
     M.total = lines.length; M.sentCount = 0; M.running = true; M.paused = false; M.progress = 0;
     M.okTrabajo = 0; M.errTrabajo = 0; M.ultimaRespuesta = Date.now(); emit();
     log(`Enviando trabajo (${lines.length} líneas)…`, 'ok');
-    grbl.queue.push(...lines); pump();
+    grbl.queue.pushMany(lines); pump();
     // vigilancia: si el controlador deja de responder, se avisa en lugar de quedarse esperando sin decir nada
     clearInterval(M._vigia);
     M._vigia = setInterval(() => {
@@ -517,7 +528,7 @@
   M.stop = async () => {
     need(); M.disparando = false; M.sdActivo = false; M._cancelPartes = true; if (M.buscandoInicio) M._abortInicio = true;
     if (M.isGrbl()) {
-      grbl.queue = [];
+      grbl.queue.clear();
       await grblWrite('\x85'); // cancelar jog
       await grblWrite('!');     // retención de avance
       const t0 = Date.now();
