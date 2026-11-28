@@ -3,7 +3,7 @@
   const G = LS.G;
   // herramienta: 'linea' (línea a línea), 'tramado' (1 bit), 'vector', 'central', 'passthrough'
   LS.IMG_DEFAULT = { brillo: 0, contraste: 0, gamma: 1, invertir: false, tramado: 'floyd', umbral: 128, realce: 0,
-    herramienta: null, bn: false, blancos: 0, redim: 'suave', grises: 'lum', pr: 30, pg: 59, pb: 11, direccion: 'horizontal' };
+    herramienta: null, bn: false, blancos: 0, fondo: 4, redim: 'suave', grises: 'lum', pr: 30, pg: 59, pb: 11, direccion: 'horizontal' };
   // Modo efectivo de tramado según la herramienta (compatible con proyectos anteriores)
   LS.imgMode = a => {
     const h = a.herramienta || (a.tramado === 'grises' ? 'linea' : a.tramado === 'umbral' ? 'linea' : 'tramado');
@@ -35,6 +35,8 @@
       v = Math.max(0, Math.min(255, v));
       v = 255 * Math.pow(v / 255, 1 / g);
       if (a.blancos > 0 && v >= 255 * (1 - a.blancos / 100)) v = 255; // blancos: aclara los tonos casi blancos
+      // limpiar fondo: el blanco «sucio» de las fotos/JPEG (253-254) se vuelve blanco puro; si no, el tramado siembra puntos sueltos en el fondo
+      const fondo = a.fondo ?? 4; if (fondo > 0 && v >= 255 * (1 - fondo / 100)) v = 255;
       if (a.invertir) v = 255 - v;
       out[i] = v;
     }

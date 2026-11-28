@@ -53,7 +53,7 @@
             <div class="row"><label>Redimensionar</label><select id="w-redim"><option value="suave">Suave (bilineal)</option><option value="nitido">Nítido (vecino más cercano)</option></select></div>
             <div class="row"><label>Escala de grises</label><select id="w-grises"><option value="lum">Luminosidad (estándar)</option><option value="prom">Promedio</option><option value="pers">Personalizado</option></select></div>
             <div id="w-rgb">${slider('w-pr', '<span style="color:#ff6b6b">Rojo</span>', 0, 100, 1, a.pr)}${slider('w-pg', '<span style="color:#5fd16b">Verde</span>', 0, 100, 1, a.pg)}${slider('w-pb', '<span style="color:#6aa8ff">Azul</span>', 0, 100, 1, a.pb)}</div>
-            ${slider('w-br', 'Brillo', -100, 100, 1, a.brillo)}${slider('w-co', 'Contraste', -100, 100, 1, a.contraste)}${slider('w-bl', 'Blancos', 0, 60, 1, a.blancos)}${slider('w-ga', 'Gamma', 0.2, 3, 0.05, a.gamma)}${slider('w-re', 'Realce', 0, 100, 1, a.realce)}
+            ${slider('w-br', 'Brillo', -100, 100, 1, a.brillo)}${slider('w-co', 'Contraste', -100, 100, 1, a.contraste)}${slider('w-bl', 'Blancos', 0, 60, 1, a.blancos)}${slider('w-fo', 'Limpiar fondo (%)', 0, 30, 1, a.fondo ?? 4)}${slider('w-ga', 'Gamma', 0.2, 3, 0.05, a.gamma)}${slider('w-re', 'Realce', 0, 100, 1, a.realce)}
             <div class="row"><label><input type="checkbox" id="w-bn" ${a.bn ? 'checked' : ''}> B&amp;N</label><label><input type="checkbox" id="w-inv" ${a.invertir ? 'checked' : ''}> Invertir</label></div>
             <div id="w-umb">${slider('w-um', 'Umbral', 1, 254, 1, a.umbral)}</div>
           </fieldset>
@@ -88,7 +88,7 @@
         let vista = 'prev';
         const leer = () => {
           Object.assign(a, { redim: $(b, '#w-redim').value, grises: $(b, '#w-grises').value, pr: +$(b, '#w-pr').value, pg: +$(b, '#w-pg').value, pb: +$(b, '#w-pb').value,
-            brillo: +$(b, '#w-br').value, contraste: +$(b, '#w-co').value, blancos: +$(b, '#w-bl').value, gamma: +$(b, '#w-ga').value, realce: +$(b, '#w-re').value,
+            brillo: +$(b, '#w-br').value, contraste: +$(b, '#w-co').value, blancos: +$(b, '#w-bl').value, fondo: +$(b, '#w-fo').value, gamma: +$(b, '#w-ga').value, realce: +$(b, '#w-re').value,
             bn: $(b, '#w-bn').checked, invertir: $(b, '#w-inv').checked, umbral: +$(b, '#w-um').value,
             herramienta: (b.querySelector('input[name="w-herr"]:checked') || {}).value || 'linea', tramado: $(b, '#w-tr').value, direccion: $(b, '#w-dir').value });
           ws.calidad = Math.max(1, +$(b, '#w-cal').value || 10); ws.ig = +$(b, '#w-ig').value || 0; ws.su = +$(b, '#w-su').value || 1;

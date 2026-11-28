@@ -47,7 +47,7 @@
   LS.layerDefault = (i) => ({
     color: PALETTE[i], nombre: 'C' + String(i).padStart(2, '0'), modo: i === 0 ? 'linea' : (i === 1 ? 'relleno' : 'linea'),
     velocidad: i === 1 ? 120 : 10, potMax: i === 1 ? 30 : 80, potMin: 0, pasadas: 1, intervalo: 0.1, angulo: 0,
-    bidireccional: true, cruzado: false, sobrebarrido: 2.5, aire: true, salida: true, visible: true,
+    bidireccional: true, cruzado: false, sobrebarrido: 2.5, saltoBlanco: 5, aire: true, salida: true, visible: true,
     tramado: 'floyd', pasoZ: 0, rellenarJuntos: true, prioridad: i
   });
 

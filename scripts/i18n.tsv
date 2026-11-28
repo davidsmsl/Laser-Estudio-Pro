@@ -928,3 +928,6 @@ Pausa entre una parte y la siguiente (deja descansar el láser y la placa)	Pause
 Seguir ya	Continue now	Seguir já
 Terminar el descanso y seguir con la siguiente parte ya	End the rest and continue with the next part now	Terminar o descanso e seguir com a próxima parte já
 La placa soltó el WiFi mientras recibe el archivo; se reconecta al terminar la subida…	The board dropped WiFi while receiving the file; reconnecting when the upload finishes…	A placa soltou o WiFi enquanto recebe o arquivo; reconecta ao terminar o envio…
+Limpiar fondo (%)	Clean background (%)	Limpar fundo (%)
+Saltar blancos de más de (mm)	Skip blanks wider than (mm)	Pular brancos maiores que (mm)
+Las zonas en blanco más anchas que esto se cruzan en movimiento rápido con el láser apagado, en vez de recorrerlas a velocidad de grabado. 0 = recorrer todo.	Blank areas wider than this are crossed with a fast move with the laser off, instead of at engraving speed. 0 = scan everything.	Áreas em branco mais largas que isto são cruzadas em movimento rápido com o laser desligado, em vez da velocidade de gravação. 0 = percorrer tudo.

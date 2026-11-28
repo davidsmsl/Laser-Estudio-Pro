@@ -194,6 +194,7 @@
       ${field(`Intervalo (mm) — ${dpi} DPI`, 'intervalo', 'step="0.01" min="0.01"', isF)}
       ${field('Ángulo de barrido (°)', 'angulo', 'step="1"', L.modo === 'relleno')}
       ${field('Sobrebarrido (%)', 'sobrebarrido', 'step="0.5" min="0"', isF)}
+      ${field('Saltar blancos de más de (mm)', 'saltoBlanco', 'step="1" min="0" title="Las zonas en blanco más anchas que esto se cruzan en movimiento rápido con el láser apagado, en vez de recorrerlas a velocidad de grabado. 0 = recorrer todo."', isF)}
       ${chk('Bidireccional', 'bidireccional', isF)}
       ${chk('Relleno cruzado', 'cruzado', L.modo === 'relleno')}
       ${chk('Rellenar formas juntas', 'rellenarJuntos', L.modo === 'relleno')}

@@ -136,12 +136,17 @@
       let segs = row.map(s => s.slice());
       if (L.bidireccional && flip) segs = segs.reverse().map(s => [s[1], s[0]]);
       const d = (L.bidireccional && flip) ? [-dir[0], -dir[1]] : dir;
-      const first = segs[0][0], last = segs[segs.length - 1][1];
-      const pre = [first[0] - d[0] * over, first[1] - d[1] * over];
-      push(cur(), pre, false, 0, L.velocidad, li, tag); tag.z = 0;
-      push(pre, first, false, 0, L.velocidad, li, { scan: true });
-      segs.forEach((s, i) => { if (i) push(cur(), s[0], false, 0, L.velocidad, li, { scan: true }); push(s[0], s[1], true, 1, L.velocidad, li, { scan: true }); });
-      push(last, [last[0] + d[0] * over, last[1] + d[1] * over], false, 0, L.velocidad, li, { scan: true });
+      // huecos anchos entre tramos (entre letras, entre formas): se cruzan en movimiento rápido
+      const salto = saltoDe(L, over), tramos = [[]];
+      segs.forEach((s, i) => { if (i && salto > 0 && Math.hypot(s[0][0] - segs[i - 1][1][0], s[0][1] - segs[i - 1][1][1]) >= salto) tramos.push([]); tramos[tramos.length - 1].push(s); });
+      for (const g of tramos) {
+        const first = g[0][0], last = g[g.length - 1][1];
+        const pre = [first[0] - d[0] * over, first[1] - d[1] * over];
+        push(cur(), pre, false, 0, L.velocidad, li, tag); tag.z = 0;
+        push(pre, first, false, 0, L.velocidad, li, { scan: true });
+        g.forEach((s, i) => { if (i) push(cur(), s[0], false, 0, L.velocidad, li, { scan: true }); push(s[0], s[1], true, 1, L.velocidad, li, { scan: true }); });
+        push(last, [last[0] + d[0] * over, last[1] + d[1] * over], false, 0, L.velocidad, li, { scan: true });
+      }
       flip = !flip;
     }
   }
@@ -175,20 +180,45 @@
       const runs = [];
       let c = firstC;
       while (c <= lastC) { const p = quant(r.power[base + c]); let e = c; while (e + 1 <= lastC && quant(r.power[base + e + 1]) === p) e++; runs.push([c, e + 1, p]); c = e + 1; }
-      if (rev) runs.reverse();
-      const xs = k => r.x0 + k * r.step;
-      const startX = rev ? xs(lastC + 1) : xs(firstC), endX = rev ? xs(firstC) : xs(lastC + 1), d = rev ? -1 : 1;
-      push(cur(), [startX - d * over, y], false, 0, L.velocidad, li, tag); tag.z = 0;
-      push([startX - d * over, y], [startX, y], false, 0, L.velocidad, li, { scan: true });
-      for (const [a, b, p] of runs) {
-        const x0 = rev ? xs(b) : xs(a), x1 = rev ? xs(a) : xs(b);
-        push([x0, y], [x1, y], p > 0, p, L.velocidad, li, { scan: true });
+      // los blancos largos se cruzan en movimiento rápido: la fila se parte en tramos con su propio sobrebarrido
+      const salto = saltoDe(L, over), grupos = [[]];
+      for (const ru of runs) {
+        if (ru[2] === 0 && salto > 0 && (ru[1] - ru[0]) * r.step >= salto) { grupos.push([]); continue; }
+        grupos[grupos.length - 1].push(ru);
       }
-      push([endX, y], [endX + d * over, y], false, 0, L.velocidad, li, { scan: true });
+      const tramos = grupos.filter(g => g.length);
+      if (rev) { tramos.reverse(); tramos.forEach(g => g.reverse()); }
+      const xs = k => r.x0 + k * r.step, d = rev ? -1 : 1;
+      for (const g of tramos) {
+        const a0 = rev ? g[0][1] : g[0][0], a1 = rev ? g[g.length - 1][0] : g[g.length - 1][1];
+        const startX = xs(a0), endX = xs(a1);
+        push(cur(), [startX - d * over, y], false, 0, L.velocidad, li, tag); tag.z = 0;
+        push([startX - d * over, y], [startX, y], false, 0, L.velocidad, li, { scan: true });
+        for (const [a, b, p] of g) {
+          const x0 = rev ? xs(b) : xs(a), x1 = rev ? xs(a) : xs(b);
+          push([x0, y], [x1, y], p > 0, p, L.velocidad, li, { scan: true });
+        }
+        push([endX, y], [endX + d * over, y], false, 0, L.velocidad, li, { scan: true });
+      }
       flip = !flip;
     }
   }
   const quant = v => Math.round(v * 100) / 100;
+  // ancho mínimo de blanco que se salta (nunca menor que el doble del sobrebarrido, si no, no ahorra tiempo)
+  // velocidad de los movimientos rápidos (mm/s): la máxima de la placa ($110/$111) si está conectada
+  J.rapida = () => {
+    const gs = LS.machine && LS.machine.connected && LS.machine.grblSettings ? LS.machine.grblSettings() : {};
+    const vx = Number(gs['110']), vy = Number(gs['111']);
+    return vx > 0 && vy > 0 ? Math.min(vx, vy) / 60 : (LS.device.velRapida || 100);
+  };
+  // Ancho mínimo de blanco que conviene saltar: solo si cruzarlo rápido (con su sobrebarrido de salida y entrada) ahorra tiempo
+  function saltoDe(L, over) {
+    const min = L.saltoBlanco ?? 5; if (!(min > 0)) return 0;
+    const v = LS.device.unidadVelocidad === 'mm/min' ? L.velocidad / 60 : L.velocidad, r = J.rapida();
+    if (!(r > v * 1.15)) return 0; // la máquina no es más rápida en vacío que grabando: saltar no ahorra
+    const util = (2 * over / v + 0.15) / (1 / v - 1 / r);
+    return Math.max(min, util, 2 * over + 1);
+  }
 
   // ---------- Transformación a coordenadas de máquina ----------
   J.anchorPoint = (bbox, ancla) => {
@@ -378,7 +408,7 @@
   };
 
   J.estimate = job => {
-    const rapid = (LS.device.velRapida || 100);
+    const rapid = J.rapida();
     let t = 0, cut = 0, travel = 0;
     for (const s of job.segs) {
       const l = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]);
