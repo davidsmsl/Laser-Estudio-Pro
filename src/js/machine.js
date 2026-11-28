@@ -32,6 +32,8 @@
   let reconectando = false;
   async function reconectarWifi(motivo) {
     if (reconectando) return; reconectando = true; grbl.enPausaRed = true;
+    // durante la subida a la tarjeta la placa puede soltar el Telnet: se espera a que termine la subida antes de reintentar
+    if (M._subiendoSD) { log('La placa soltó el WiFi mientras recibe el archivo; se reconecta al terminar la subida…', 'in'); while (M._subiendoSD && M.connected && !grbl.cerrando) await new Promise(r => setTimeout(r, 500)); }
     const d = LS.device, eraTrabajo = M.running;
     log('Se perdió la conexión WiFi' + (motivo ? ' (' + motivo + ')' : '') + '. Reintentando…', 'err');
     const estadoPrev = M.state; M.state = 'Reconectando…'; emit();
@@ -92,7 +94,7 @@
     await new Promise(r => setTimeout(r, 1200));
     await grblWrite('\n$$\n$I\n');
     let tic = 0;
-    grbl.pollTimer = setInterval(() => { tic++; if (!M.connected || grbl.enPausaRed) return; if (M.via === 'wifi' && M.running && tic % 4) return; grblWrite('?').catch(() => { }); }, 250);
+    grbl.pollTimer = setInterval(() => { tic++; if (!M.connected || grbl.enPausaRed || M._subiendoSD) return; if (M.via === 'wifi' && M.running && tic % 4) return; grblWrite('?').catch(() => { }); }, 250);
     if (LS.device.homingAlConectar) M.home();
     // placas MKS LS ESP32: $45 decide si el conector Z funciona (0 = desactivado)
     setTimeout(async () => {
@@ -473,16 +475,27 @@
     if (M.via !== 'wifi') throw new Error('Grabar desde la tarjeta requiere la conexión WiFi.');
     if (M.running || M.sdActivo) throw new Error('Ya hay un trabajo en curso.');
     // sin comentarios ni líneas vacías (algunos firmwares fallan con acentos en los comentarios)
-    const texto = gcode.split('\n').map(l => l.replace(/;.*$/, '').replace(/\([^)]*\)/g, '').trim()).filter(Boolean).join('\n') + '\n';
+    let modo = null;
+    const texto = gcode.split('\n').map(l => {
+      l = l.replace(/;.*$/, '').replace(/\([^)]*\)/g, '').trim(); if (!l) return '';
+      const m = l.match(/^G0?([01])\s+(.*)$/);
+      if (m && !/[GM$\[]/.test(m[2])) { const c = m[2].replace(/\s+/g, ''); const r = (modo === m[1] ? '' : 'G' + m[1]) + c; modo = m[1]; return r; }
+      modo = null; return l; // otros comandos: se dejan tal cual y se vuelve a escribir G0/G1 en la siguiente línea
+    }).filter(Boolean).join('\n') + '\n';
     const bytes = new TextEncoder().encode(texto);
     log(`Subiendo el trabajo a la tarjeta de la placa (${bytes.length < 10240 ? bytes.length + ' bytes' : (bytes.length / 1024).toFixed(0) + ' KB'})…`, 'ok');
     M.state = 'Subiendo a la tarjeta…'; emit();
+    M._subiendoSD = true;
     try { await window.nativo.sdSubir(d.wifiHost.trim(), d.wifiHttp || 80, nombre, bytes); }
     catch (e) {
-      M.state = 'Inactivo'; emit();
+      M._subiendoSD = false; M.state = 'Inactivo'; emit();
       throw new Error('No se pudo subir el archivo a la tarjeta (' + e.message.replace(/^Error invoking remote method 'sd:subir': (Error: )?/, '') + '). Revise que la tarjeta esté puesta en la placa, o desactive «Grabar desde la tarjeta».');
     }
+    M._subiendoSD = false;
     log('Archivo guardado en la tarjeta: /' + nombre, 'ok');
+    // si el WiFi se cayó durante la subida, espera a que vuelva antes de dar la orden de iniciar
+    for (let i = 0; i < 60 && (grbl.enPausaRed || /Reconectando/.test(M.state)) && M.connected; i++) await new Promise(r => setTimeout(r, 500));
+    M.state = 'Inactivo'; emit();
     // inicia la ejecución (comando de ESP3D/Grbl_ESP32 antiguo y, si no lo reconoce, el moderno)
     const nErr = M.errors.length;
     await M.sendLine('[ESP220]/' + nombre);
@@ -502,7 +515,7 @@
   // Primero cancela el jog y frena con retención (conserva la posición); luego reinicia el controlador
   // ya detenido, para vaciar su búfer sin perder la posición (importante en máquinas sin finales de carrera).
   M.stop = async () => {
-    need(); M.disparando = false; M.sdActivo = false; if (M.buscandoInicio) M._abortInicio = true;
+    need(); M.disparando = false; M.sdActivo = false; M._cancelPartes = true; if (M.buscandoInicio) M._abortInicio = true;
     if (M.isGrbl()) {
       grbl.queue = [];
       await grblWrite('\x85'); // cancelar jog

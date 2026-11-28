@@ -916,3 +916,15 @@ La parte de arriba de la pieza gira <b>hacia el fondo</b> (▼).	The top of the 
 ⏮ Reiniciar	⏮ Restart	⏮ Reiniciar
 Automática (~20 s)	Automatic (~20 s)	Automática (~20 s)
 ×1 (real)	×1 (real)	×1 (real)
+Trabajo por partes	Job in parts	Trabalho por partes
+Las imágenes grandes se graban por franjas: cada parte se prepara y se envía por separado, con un descanso entre partes, para que la placa no se sature	Large images are engraved in strips: each part is prepared and sent separately, with a rest between parts, so the board is not overloaded	Imagens grandes são gravadas em faixas: cada parte é preparada e enviada separadamente, com um descanso entre partes, para não sobrecarregar a placa
+Automático (imágenes grandes)	Automatic (large images)	Automático (imagens grandes)
+Siempre	Always	Sempre
+Nunca	Never	Nunca
+Alto de cada parte (mm)	Height of each part (mm)	Altura de cada parte (mm)
+0 = automático según el tamaño de la imagen	0 = automatic according to image size	0 = automático conforme o tamanho da imagem
+Descanso entre partes (s)	Rest between parts (s)	Descanso entre partes (s)
+Pausa entre una parte y la siguiente (deja descansar el láser y la placa)	Pause between one part and the next (lets the laser and the board rest)	Pausa entre uma parte e a seguinte (deixa o laser e a placa descansarem)
+Seguir ya	Continue now	Seguir já
+Terminar el descanso y seguir con la siguiente parte ya	End the rest and continue with the next part now	Terminar o descanso e seguir com a próxima parte já
+La placa soltó el WiFi mientras recibe el archivo; se reconecta al terminar la subida…	The board dropped WiFi while receiving the file; reconnecting when the upload finishes…	A placa soltou o WiFi enquanto recebe o arquivo; reconecta ao terminar o envio…

@@ -116,9 +116,17 @@
   // Rasteriza un objeto imagen para el trabajo: rejilla alineada a los ejes con paso = intervalo
   // Rasteriza un objeto imagen para el trabajo. La rejilla se orienta según la dirección de barrido
   // (horizontal 0°, vertical 90°, diagonal 45°); r.map convierte puntos de la rejilla al lienzo.
+  // La rejilla de potencias se guarda: en trabajos por partes se calcula una sola vez
   LS.rasterize = (obj, interval) => {
     const entry = LS.imgCache[obj.id];
     if (!entry || !entry.img) throw new Error('La imagen aún no se ha cargado.');
+    const clave = [interval, obj.w, obj.h, obj.tx.join(','), JSON.stringify(obj.ajustes)].join('|');
+    if (entry.raster && entry.raster.src === obj.src && entry.raster.clave === clave) return entry.raster.r;
+    const r = rasterizar(obj, interval, entry);
+    entry.raster = { src: obj.src, clave, r };
+    return r;
+  };
+  function rasterizar(obj, interval, entry) {
     const img = entry.img, aj = Object.assign({}, LS.IMG_DEFAULT, obj.ajustes);
     const ang = LS.DIR_ANG[aj.direccion] || 0, Rg = G.rot(-ang), Rw = G.rot(ang);
     const corners = [[0, 0], [obj.w, 0], [obj.w, obj.h], [0, obj.h]].map(p => G.apply(Rg, G.apply(obj.tx, p)));
@@ -137,6 +145,6 @@
     }
     const power = dither(g2, cols, rows, aj);
     return { x0: b.x0, y0: b.y0, step: interval, cols, rows, power, gris: LS.imgMode(aj) === 'grises', map: ang ? (p => G.apply(Rw, p)) : null };
-  };
+  }
   LS.grayFrom = grayFrom;
 })(window.LS);

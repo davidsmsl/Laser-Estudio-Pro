@@ -71,6 +71,11 @@
     const M = LS.machine; if (!M.connected) throw new Error('Conecte primero el láser.');
     await M.prepararTrabajo();
     U.msg('Preparando el trabajo…'); await new Promise(r => setTimeout(r, 30)); // deja ver el aviso en trabajos grandes
+    // imágenes grandes: se graban por partes (cada parte se prepara y envía por separado, con descanso entre partes)
+    if (LS.device.tipo !== 'ruida') {
+      const plan = J.planPartes();
+      if (plan.necesario) return A.trabajoPorPartes(plan);
+    }
     const job = build(); checkBounds(job);
     const est = J.estimate(job);
     if (LS.device.tipo === 'ruida') await M.runRuida(LS.ruida.encodeJob(job, J.options));
@@ -88,6 +93,46 @@
     U.msg(`Grabando… tiempo estimado ${J.fmtTime(est.segundos)}`);
     U.showTab('laser');
   });
+  // ---------- Trabajo por partes ----------
+  const dormir = ms => new Promise(r => setTimeout(r, ms));
+  // espera a que la máquina termine la parte en curso (por cable o desde la tarjeta SD)
+  async function esperarFin(M) {
+    const t0 = Date.now();
+    while (!(M.running || M.sdActivo) && Date.now() - t0 < 10000 && !M._cancelPartes) await dormir(300);
+    while ((M.running || M.sdActivo) && M.connected && !M._cancelPartes) await dormir(500);
+    await dormir(800);
+  }
+  A.trabajoPorPartes = async plan => {
+    const M = LS.machine, d = LS.device, n = plan.franjas.length;
+    M._cancelPartes = false; M._saltarDescanso = false;
+    const inicio = d.volverOrigen !== false && M.posInicio ? M.posInicio() : null; // cada parte vuelve al punto de partida: la siguiente arranca desde el mismo lugar
+    const descanso = Math.max(0, Number(d.partesDescanso ?? 15));
+    U.toast(`Trabajo grande: se grabará en ${n} partes de ${plan.alto.toFixed(1)} mm${descanso ? `, con ${descanso} s de descanso entre partes` : ''}.`, 'ok');
+    U.showTab('laser');
+    let hechas = 0;
+    for (let k = 0; k < n; k++) {
+      if (M._cancelPartes || !M.connected) break;
+      U.msg(`Preparando la parte ${k + 1} de ${n}…`); M.parteActual = { k: k + 1, n }; await dormir(40);
+      let job;
+      try { job = J.build(Object.assign({}, J.options, { franja: plan.franjas[k], anchorBox: plan.anchorBox })); }
+      catch (e) { if (/no contiene nada|no generó/.test(e.message)) continue; throw e; } // franja en blanco
+      const gc = LS.toGcode(job, Object.assign({}, J.options, inicio ? { volverA: inicio } : {}));
+      const est = J.estimate(job);
+      if (M.via === 'wifi' && d.usarSD !== false) await M.runDesdeSD(gc); else M.runGcode(gc);
+      U.msg(`Grabando la parte ${k + 1} de ${n} · ${J.fmtTime(est.segundos)} aprox.`);
+      job = null; // libera memoria antes de la siguiente parte
+      await esperarFin(M);
+      if (M._cancelPartes || !M.connected) break;
+      hechas = k + 1;
+      if (k < n - 1 && descanso > 0) {
+        for (let t = descanso; t > 0 && !M._cancelPartes && !M._saltarDescanso; t--) { U.msg(`Descanso: ${t} s · sigue la parte ${k + 2} de ${n}`); await dormir(1000); }
+        M._saltarDescanso = false;
+      }
+    }
+    M.parteActual = null;
+    if (M._cancelPartes) { U.msg(`Trabajo detenido en la parte ${hechas + 1} de ${n}.`); U.toast(`Trabajo por partes detenido (${hechas} de ${n} partes terminadas).`, 'err'); }
+    else if (hechas >= n || !M._cancelPartes) { U.msg(`Trabajo terminado (${n} partes).`); U.toast(`Trabajo terminado: ${n} partes.`, 'ok'); }
+  };
   // Ensayo en la máquina: recorre todo el trabajo (y gira el rotativo) con el láser apagado
   A.dryRun = () => U.guard(async () => {
     await LS.machine.prepararTrabajo();
@@ -102,7 +147,7 @@
     U.toast('Ensayo iniciado: la máquina se mueve con el láser apagado.', 'ok');
   });
   A.frame = (extra = {}) => U.guard(async () => {
-    await LS.machine.prepararTrabajo(); const job = build();
+    await LS.machine.prepararTrabajo(); const job = build({ soloBBox: true });
     const o = Object.assign({}, J.options, extra);
     await LS.machine.frame(job, o);
     const d = LS.device, luz = extra.luz != null ? extra.luz : (d.marcoLuz != null ? d.marcoLuz : d.potenciaMarco > 0);

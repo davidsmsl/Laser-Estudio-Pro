@@ -240,6 +240,9 @@
       <div class="row"><label>Punto del trabajo</label><div class="anchor9" id="ls-anchor">${['sup-izq', 'sup-cen', 'sup-der', 'cen-izq', 'cen-cen', 'cen-der', 'inf-izq', 'inf-cen', 'inf-der'].map(a => `<i data-a="${a}"></i>`).join('')}</div></div>
       <div class="row"><label>Solo selección</label><input type="checkbox" id="ls-onlysel"></div>
       <div class="row"><label title="Graba o corta solo lo que queda dentro de un recuadro, sin tocar el diseño">Zona parcial</label><span id="ls-zonainfo" class="muted">— todo el diseño —</span></div>
+      <div class="row"><label title="Las imágenes grandes se graban por franjas: cada parte se prepara y se envía por separado, con un descanso entre partes, para que la placa no se sature">Trabajo por partes</label><select id="ls-pmodo"><option value="auto">Automático (imágenes grandes)</option><option value="siempre">Siempre</option><option value="nunca">Nunca</option></select></div>
+      <div class="row"><label title="0 = automático según el tamaño de la imagen">Alto de cada parte (mm)</label><input type="number" id="ls-palto" min="0" step="1" style="width:70px"></div>
+      <div class="row"><label title="Pausa entre una parte y la siguiente (deja descansar el láser y la placa)">Descanso entre partes (s)</label><input type="number" id="ls-pdesc" min="0" step="5" style="width:70px"><button id="ls-psig" hidden title="Terminar el descanso y seguir con la siguiente parte ya">Seguir ya</button></div>
       <div class="row"><button id="ls-zonad" title="Dibuje un recuadro en el lienzo sobre la parte que quiere volver a grabar o reforzar">⬚ Dibujar zona</button><button id="ls-zonaq" disabled>✕ Quitar zona</button></div>
       <div class="row"><label>Optimizar recorrido</label><input type="checkbox" id="ls-opt" checked></div>
       <div class="row"><label>Interiores primero</label><input type="checkbox" id="ls-inner" checked></div>
@@ -293,6 +296,12 @@
     $('#ls-origin').onchange = e => { jobOpts.origenTrabajo = e.target.value; if (e.target.value === 'usuario' && !jobOpts.origenUsuario) toast('Use la herramienta "Fijar origen de usuario" o el panel Mover para definirlo.'); };
     $('#ls-anchor').querySelectorAll('i').forEach(i => i.onclick = () => { jobOpts.ancla = i.dataset.a; refreshLaser(); });
     $('#ls-onlysel').onchange = e => jobOpts.soloSeleccion = e.target.checked;
+    { const d = LS.device, pm = $('#ls-pmodo'), pa = $('#ls-palto'), pd = $('#ls-pdesc');
+      pm.value = d.partesModo || 'auto'; pa.value = d.partesAlto || 0; pd.value = d.partesDescanso ?? 15;
+      pm.onchange = () => { d.partesModo = pm.value; LS.saveSettings(); };
+      pa.onchange = () => { d.partesAlto = Math.max(0, +pa.value || 0); LS.saveSettings(); };
+      pd.onchange = () => { d.partesDescanso = Math.max(0, +pd.value || 0); LS.saveSettings(); };
+      $('#ls-psig').onclick = () => { LS.machine._saltarDescanso = true; }; }
     $('#ls-rotsim').onclick = () => LS.rotSim.open();
     $('#ls-zonad').onclick = () => { U.setTool('zona'); toast('Arrastre un recuadro sobre la parte del diseño que quiere grabar o cortar.'); };
     $('#ls-zonaq').onclick = () => { LS.jobs.setZona(null); toast('Zona parcial quitada: se graba todo el diseño.'); };
@@ -331,6 +340,7 @@
   }
   let rotPrev = null;
   function refreshLaser() {
+    { const b = document.getElementById('ls-psig'); if (b) b.hidden = !LS.machine.parteActual; }
     { const z = LS.jobs.options.zona, inf = document.getElementById('ls-zonainfo'), q = document.getElementById('ls-zonaq');
       if (inf) { inf.textContent = z ? `${(z.x1 - z.x0).toFixed(1)} × ${(z.y1 - z.y0).toFixed(1)} mm (solo esa parte)` : '— todo el diseño —'; inf.classList.toggle('warn', !!z); }
       if (q) q.disabled = !z; }

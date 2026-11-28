@@ -99,7 +99,8 @@
         } else if (L.modo === 'imagen') {
           for (const o of os.filter(o => o.kind === 'image')) {
             const r = LS.rasterize(o, Math.max(0.02, L.intervalo));
-            emitRaster(r, L, li, push, () => cur, tag);
+            if (opts.soloBBox) contornoRaster(r, li, push, () => cur, tag); // marco/planificación: solo el área grabada
+            else emitRaster(r, L, li, push, () => cur, tag, opts.franja);
           }
           // vectores en capa de imagen se rellenan
           const vec = os.filter(o => o.kind !== 'image');
@@ -109,8 +110,10 @@
     }
     if (!segs.length) throw new Error('El trabajo no generó ningún movimiento (¿formas abiertas en una capa de relleno?).');
     const job = { segs, bbox, layers: layerIds };
+    if (opts.anchorBox) job.anchorBox = opts.anchorBox; // trabajo por partes: todas las partes usan el anclaje del trabajo completo
     if (LS.device.recortarArea !== false && !opts.sinRecorte) J.clipToBed(job, opts);
     if (opts.zona && !opts.sinZona) J.clipToZona(job, opts.zona);
+    if (opts.franja) J.clipToZona(job, { x0: -1e7, y0: opts.franja.y0, x1: 1e7, y1: opts.franja.y1 - 1e-6 });
     // en conos, la corrección varía a lo largo del eje: se subdividen los tramos para seguir la curva
     if (J.coneInfo()) {
       const out = [];
@@ -142,7 +145,21 @@
       flip = !flip;
     }
   }
-  function emitRaster(r, L, li, pushRaw, cur, tag) {
+  // Rectángulo del área que realmente se graba (sin recorrer píxel por píxel): para el marco y para planificar partes
+  function contornoRaster(r, li, pushRaw, cur, tag) {
+    let r0 = -1, r1 = -1, c0 = Infinity, c1 = -1;
+    for (let row = 0; row < r.rows; row++) {
+      const base = row * r.cols; let a = -1, b = -1;
+      for (let c = 0; c < r.cols; c++) if (r.power[base + c] > 0.004) { if (a < 0) a = c; b = c; }
+      if (a < 0) continue; if (r0 < 0) r0 = row; r1 = row; c0 = Math.min(c0, a); c1 = Math.max(c1, b);
+    }
+    if (r0 < 0) return;
+    const M = r.map || (p => p), x0 = r.x0 + c0 * r.step, x1 = r.x0 + (c1 + 1) * r.step, y0 = r.y0 + r0 * r.step, y1 = r.y0 + (r1 + 1) * r.step;
+    const pts = [[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]].map(M);
+    pushRaw(cur(), pts[0], false, 0, 100, li, tag); tag.z = 0;
+    for (let i = 1; i < pts.length; i++) pushRaw(pts[i - 1], pts[i], true, 1, 100, li);
+  }
+  function emitRaster(r, L, li, pushRaw, cur, tag, franja) {
     const over = (L.sobrebarrido || 0) / 100 * L.velocidad;
     // puntos en el marco de la rejilla; r.map los lleva al lienzo (barrido vertical o diagonal)
     const M = r.map || (p => p);
@@ -150,6 +167,7 @@
     let flip = false;
     for (let row = 0; row < r.rows; row++) {
       const y = r.y0 + (row + 0.5) * r.step, base = row * r.cols;
+      if (franja && !r.map && (y < franja.y0 || y >= franja.y1)) continue; // fila de otra parte
       let firstC = -1, lastC = -1;
       for (let c = 0; c < r.cols; c++) if (r.power[base + c] > 0.004) { if (firstC < 0) firstC = c; lastC = c; }
       if (firstC < 0) continue;
@@ -269,7 +287,7 @@
     return [[a[0] + t0 * dx, a[1] + t0 * dy], [a[0] + t1 * dx, a[1] + t1 * dy]];
   }
   J.clipToBed = (job, opts) => {
-    job.anchorBox = job.bbox;
+    job.anchorBox = job.anchorBox || job.bbox;
     const r = J.clipRectWorld(job.bbox, opts);
     if (!r) { job.recorte = { desconocido: true }; return job; }
     const out = []; let cur = null, cut = 0, bbox = null;
@@ -288,6 +306,32 @@
     job.recorte = { mm: cut, recortado: cut > 0.01 };
     if (!out.some(s => s.on)) throw new Error('Todo el diseño queda fuera del área de trabajo definida. Muévalo dentro de la mesa.');
     return job;
+  };
+
+  // ---------- Trabajo por partes (imágenes grandes) ----------
+  // Divide el trabajo en franjas horizontales que se preparan, envían y graban una tras otra,
+  // con un descanso entre partes. Todas comparten el anclaje del trabajo completo, así quedan alineadas.
+  J.planPartes = (opts = {}) => {
+    opts = Object.assign({}, J.options, opts);
+    const d = LS.device, modo = d.partesModo || 'auto';
+    const caja = J.build(Object.assign({}, opts, { soloBBox: true }));
+    const b = caja.bbox, anchorBox = caja.anchorBox || caja.bbox;
+    // píxeles por mm de alto de las imágenes que salen (para estimar el tamaño del G-code)
+    let dens = 0;
+    const objs = (opts.soloSeleccion ? D.selected() : D.objects).filter(o => o.kind === 'image' && D.layer(o.layer).salida && D.layer(o.layer).modo === 'imagen');
+    for (const o of objs) {
+      const iv = Math.max(0.02, D.layer(o.layer).intervalo), c = [[0, 0], [o.w, 0], [o.w, o.h], [0, o.h]].map(p => G.apply(o.tx, p)), bb = G.bbox(c);
+      dens += (bb.w / iv) / iv;
+    }
+    const pixeles = dens * (b ? b.h : 0);
+    const necesario = modo === 'siempre' || (modo === 'auto' && pixeles > (LS.machine && LS.machine.via === 'wifi' ? 6e5 : 1.2e6));
+    if (!necesario || !b || modo === 'nunca') return { necesario: false, pixeles };
+    // por WiFi las partes son más pequeñas: la placa recibe el archivo más rápido y sin soltar la conexión
+    const pxParte = LS.machine && LS.machine.via === 'wifi' && d.usarSD !== false ? 4e5 : 8e5;
+    const alto = d.partesAlto > 0 ? d.partesAlto : Math.max(3, dens > 0 ? pxParte / dens : b.h);
+    const n = Math.max(1, Math.ceil(b.h / alto)), h = b.h / n, franjas = [];
+    for (let i = 0; i < n; i++) franjas.push({ y0: i ? b.y0 + i * h : b.y0 - 1, y1: i === n - 1 ? b.y1 + 1 : b.y0 + (i + 1) * h });
+    return { necesario: n > 1, franjas, anchorBox, bbox: b, pixeles, alto: h };
   };
 
   // ---------- Zona parcial ----------

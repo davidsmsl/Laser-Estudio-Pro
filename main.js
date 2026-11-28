@@ -257,7 +257,7 @@ ipcMain.handle('sd:subir', async (e, { host, puerto, nombre, data }) => {
   fd.append('path', '/');
   fd.append(ruta + 'S', String(buf.length));
   fd.append('myfile[]', new Blob([buf], { type: 'application/octet-stream' }), ruta);
-  const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), 120000);
+  const ctrl = new AbortController(); const tm = setTimeout(() => ctrl.abort(), Math.max(120000, buf.length / 15)); // ~15 KB/s mínimo: los archivos grandes tardan más en subir
   try {
     const r = await fetch(url, { method: 'POST', body: fd, signal: ctrl.signal });
     const txt = await r.text().catch(() => '');
