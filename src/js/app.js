@@ -147,7 +147,7 @@
     U.toast('Ensayo iniciado: la máquina se mueve con el láser apagado.', 'ok');
   });
   A.frame = (extra = {}) => U.guard(async () => {
-    await LS.machine.prepararTrabajo(); const job = build({ soloBBox: true });
+    await LS.machine.prepararTrabajo(); const job = build({ soloBBox: true, ...(extra.soloSeleccion ? { soloSeleccion: true } : {}) });
     const o = Object.assign({}, J.options, extra);
     await LS.machine.frame(job, o);
     const d = LS.device, luz = extra.luz != null ? extra.luz : (d.marcoLuz != null ? d.marcoLuz : d.potenciaMarco > 0);

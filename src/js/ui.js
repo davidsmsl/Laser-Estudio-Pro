@@ -123,7 +123,7 @@
       const sel = D.selected(); $('#nb-info').textContent = sel.length === 1 ? ({ path: 'Forma', image: 'Imagen', text: 'Texto' })[sel[0].kind] + (sel[0].group ? ' (grupo)' : '') : `${sel.length} objetos`;
     } else { ['x', 'y', 'w', 'h'].forEach(k => $('#nb-' + k).value = ''); $('#nb-info').textContent = `${D.objects.length} objetos`; }
     // la capa activa sigue a la selección (p. ej. al escoger un texto se ven y editan los ajustes de su capa)
-    if (has) { const ks = [...new Set(D.selected().map(o => o.layer))].filter(k => k < 1000); if (ks.length === 1 && ks[0] !== D.currentLayer) { D.currentLayer = ks[0]; setTimeout(() => D.changed('layers'), 0); } }
+    if (has) { const ks = [...new Set(D.selected().map(o => o.layer))].filter(k => k < 1000); if (ks.length === 1 && ks[0] !== D.currentLayer) { D.currentLayer = ks[0]; D._capaElegida = false; setTimeout(() => D.changed('layers'), 0); } }
     const ls = $('#nb-layer'); const keys = usedLayers(); if (!keys.includes(D.currentLayer)) keys.push(D.currentLayer);
     ls.innerHTML = keys.sort((a, b) => a - b).map(k => `<option value="${k}" ${k === D.currentLayer ? 'selected' : ''}>${esc(D.layer(k).nombre)}</option>`).join('');
   };
@@ -134,7 +134,7 @@
     const p = $('#palette'); p.innerHTML = '<label style="margin-right:6px">Capas:</label>';
     LS.PALETTE.forEach((c, i) => {
       const s = h(`<span class="sw" style="background:${c}" title="Capa ${String(i).padStart(2, '0')} — clic: asignar a la selección">${String(i).padStart(2, '0')}</span>`);
-      s.onclick = () => { if (D.selection.size) { D.checkpoint(); D.selected().forEach(o => o.layer = i); } D.layer(i); D.currentLayer = i; D.changed('layers'); };
+      s.onclick = () => { if (D.selection.size) { D.checkpoint(); D.selected().forEach(o => o.layer = i); } D.layer(i); D.currentLayer = i; D._capaElegida = true; D.changed('layers'); };
       p.append(s);
     });
   }
@@ -173,7 +173,7 @@
     const vu = LS.device.unidadVelocidad;
     body.innerHTML = keys.map(k => { const L = D.layer(k); return `<tr data-k="${k}" class="${k === D.currentLayer ? 'on' : ''}"><td><span class="sw" style="background:${L.color}"></span> ${String(k).padStart(2, '0')}</td><td>${MODOS[L.modo]}</td><td>${L.velocidad}</td><td>${L.potMax}%</td><td><input type="checkbox" data-f="salida" ${L.salida ? 'checked' : ''}></td><td><input type="checkbox" data-f="visible" ${L.visible ? 'checked' : ''}></td></tr>`; }).join('') || `<tr><td colspan="6" style="color:var(--muted);padding:10px">Dibuje o importe algo para crear capas. Velocidad en ${vu}.</td></tr>`;
     body.querySelectorAll('tr[data-k]').forEach(tr => {
-      tr.onclick = e => { if (e.target.tagName === 'INPUT') return; D.currentLayer = Number(tr.dataset.k); D.changed('layers'); };
+      tr.onclick = e => { if (e.target.tagName === 'INPUT') return; D.currentLayer = Number(tr.dataset.k); D._capaElegida = true; D.changed('layers'); };
       tr.querySelectorAll('input').forEach(inp => inp.onchange = () => { D.layer(Number(tr.dataset.k))[inp.dataset.f] = inp.checked; D.changed('layers'); });
     });
     buildLayerEditor();

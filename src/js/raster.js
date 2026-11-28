@@ -13,7 +13,7 @@
     return a.tramado === 'grises' || a.tramado === 'umbral' ? 'floyd' : a.tramado;
   };
   LS.imgTool = a => a.herramienta || (a.tramado === 'grises' || a.tramado === 'umbral' ? 'linea' : 'tramado');
-  LS.DIR_ANG = { horizontal: 0, vertical: 90, diagonal: 45 };
+  LS.DIR_ANG = { horizontal: 0, vertical: 90, diagonal: 45, diagonal2: -45 };
   LS.DITHERS = { umbral: 'Umbral', floyd: 'Floyd–Steinberg', jarvis: 'Jarvis', stucki: 'Stucki', atkinson: 'Atkinson', sierra: 'Sierra', bayer: 'Ordenado (Bayer)', grises: 'Escala de grises (3D)', halftone: 'Semitono' };
 
   // gris: Float32Array 0..255 (0 negro = máximo grabado)

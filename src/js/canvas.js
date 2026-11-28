@@ -684,7 +684,7 @@
     const d = V.draft; V.draft = null;
     if (!d || d.pts.length < 2) { V.redraw(); return; }
     D.checkpoint(); D.selection.clear();
-    D.add({ kind: 'path', paths: [{ pts: d.pts, closed }] });
+    D.add({ kind: 'path', paths: [{ pts: d.pts, closed }], layer: LS.ctx ? LS.ctx.capaParaFigura() : D.currentLayer });
     D.changed();
   }
   V.finishPolyline = finishPolyline;
@@ -828,7 +828,7 @@
       const d = V.draft; V.draft = null;
       if (Math.abs(d.cur[0] - d.start[0]) > 0.2 || Math.abs(d.cur[1] - d.start[1]) > 0.2) {
         D.checkpoint(); D.selection.clear();
-        D.add({ kind: 'path', paths: LS.shapePaths(d.shape, d.start, d.cur, d.shift), shape: d.shape });
+        D.add({ kind: 'path', paths: LS.shapePaths(d.shape, d.start, d.cur, d.shift), shape: d.shape, layer: LS.ctx ? LS.ctx.capaParaFigura() : D.currentLayer });
         D.changed();
       } else V.redraw();
       return;

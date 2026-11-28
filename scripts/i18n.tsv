@@ -951,3 +951,40 @@ Aplicar	Apply	Aplicar
 Procesando la imagen…	Processing the image…	Processando a imagem…
 Seleccione una imagen en el lienzo (clic sobre ella) y vuelva a pulsar «Quitar fondo».	Select an image on the canvas (click it) and press «Remove background» again.	Selecione uma imagem na tela (clique nela) e pressione «Remover fundo» novamente.
 No queda ninguna silueta para conservar.	No silhouette left to keep.	Não resta nenhuma silhueta para manter.
+Material…	Material…	Material…
+asigna un material solo a lo seleccionado	assigns a material only to the selection	atribui um material só à seleção
+👁 Vista previa de la selección	👁 Preview selection	👁 Pré-visualizar seleção
+↔ Sentido del grabado	↔ Engraving direction	↔ Sentido da gravação
+↔ Horizontal	↔ Horizontal	↔ Horizontal
+↕ Vertical	↕ Vertical	↕ Vertical
+⤢ Diagonal 45°	⤢ Diagonal 45°	⤢ Diagonal 45°
+⤡ Diagonal −45°	⤡ Diagonal −45°	⤡ Diagonal −45°
+⇄ Ida y vuelta (bidireccional)	⇄ Back and forth (bidirectional)	⇄ Ida e volta (bidirecional)
+▦ Relleno cruzado	▦ Cross fill	▦ Preenchimento cruzado
+↺ Invertir sentido del corte	↺ Reverse cut direction	↺ Inverter sentido do corte
+✂ Cortar por el borde (contorno)	✂ Cut along the edge (outline)	✂ Cortar pela borda (contorno)
+▦ Grabar el interior (relleno)	▦ Engrave the inside (fill)	▦ Gravar o interior (preenchimento)
+◧ Mover a la capa	◧ Move to layer	◧ Mover para a camada
+＋ Capa nueva solo para esto	＋ New layer just for this	＋ Camada nova só para isto
+▣ Marco de la selección	▣ Frame the selection	▣ Moldura da seleção
+▶ Grabar solo la selección…	▶ Engrave only the selection…	▶ Gravar só a seleção…
+⬚ Zona parcial sobre la selección	⬚ Partial zone over the selection	⬚ Zona parcial sobre a seleção
+🖼 Asistente de imagen…	🖼 Image wizard…	🖼 Assistente de imagem…
+🪄 Quitar fondo y siluetas…	🪄 Remove background and silhouettes…	🪄 Remover fundo e silhuetas…
+✎ Calcar imagen (vectorizar)…	✎ Trace image (vectorize)…	✎ Decalcar imagem (vetorizar)…
+𝐓 Convertir texto en trazo	𝐓 Convert text to path	𝐓 Converter texto em traçado
+⧉ Duplicar	⧉ Duplicate	⧉ Duplicar
+⊕ Centrar en el área de trabajo	⊕ Center in work area	⊕ Centralizar na área de trabalho
+⟲ Girar / reflejar	⟲ Rotate / mirror	⟲ Girar / espelhar
+↻ Girar 90°	↻ Rotate 90°	↻ Girar 90°
+⇋ Reflejar horizontal	⇋ Mirror horizontally	⇋ Espelhar horizontal
+⇵ Reflejar vertical	⇵ Mirror vertically	⇵ Espelhar vertical
+⊞ Agrupar	⊞ Group	⊞ Agrupar
+⊟ Desagrupar	⊟ Ungroup	⊟ Desagrupar
+⧉ Copiar	⧉ Copy	⧉ Copiar
+🗑 Eliminar	🗑 Delete	🗑 Excluir
+📋 Pegar	📋 Paste	📋 Colar
+▣ Seleccionar todo	▣ Select all	▣ Selecionar tudo
+👁 Vista previa del trabajo	👁 Job preview	👁 Pré-visualização do trabalho
+⬚ Dibujar zona parcial	⬚ Draw partial zone	⬚ Desenhar zona parcial
+✕ Quitar zona parcial	✕ Remove partial zone	✕ Remover zona parcial
